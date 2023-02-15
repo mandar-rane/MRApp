@@ -3,7 +3,6 @@ package com.example.mrapp
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mrapp.Adapters.MainPageAdapter
@@ -19,9 +18,7 @@ import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
-import retrofit2.HttpException
 import retrofit2.Response
-import java.io.IOException
 
 class MainActivity : AppCompatActivity() {
     private lateinit var dao: DAO
@@ -96,8 +93,7 @@ class MainActivity : AppCompatActivity() {
                 val movieResp: MovieApiResp? = response.body()
                 if (movieResp != null) {
                     Log.d("TypesenseLog", movieResp.Movie_List[0].YouTube_Trailer)
-                    movieResp.Movie_List.forEach {
-
+                    movieResp.Movie_List.distinct().forEach {
                         movieArrayList.add(
                             Movie(
                                 it.Title,
@@ -107,18 +103,17 @@ class MainActivity : AppCompatActivity() {
                                 it.Genres,
                                 it.IMDBID,
                                 it.Runtime,
-                                "",
+                                it.YouTube_Trailer,
                                 it.Rating,
                                 it.Movie_Poster,
                                 it.Director,
                                 it.Writers,
-                                it.Cast
+                                it.Cast,
                             )
                         )
 
-
                     }
-                    updateLocalDB()
+                    updateLocalDB(movieResp)
                     setMainPageRV()
                     //Log.d("TypesenseLog", movieArrayList.toString())
                 } else {
@@ -133,8 +128,31 @@ class MainActivity : AppCompatActivity() {
         return movieResp
     }
 
-    private fun updateLocalDB() {
+    private fun updateLocalDB(movieresp: MovieApiResp?) {
+        var movielist = movieresp!!.Movie_List.distinct()
+        CoroutineScope(IO).launch {
+            dao.nukeTable()
 
+            movielist.forEach {
+                dao.insertToDB(
+                    RoomEntity(it.Title,
+                        it.Year,
+                        it.Summary,
+                        it.Short_Summary,
+                        it.Genres,
+                        it.IMDBID,
+                        it.Runtime,
+                        it.YouTube_Trailer,
+                        it.Rating,
+                        it.Movie_Poster,
+                        it.Director,
+                        it.Writers,
+                        it.Cast,)
+                )
+            }
+
+
+        }
 
     }
 }
