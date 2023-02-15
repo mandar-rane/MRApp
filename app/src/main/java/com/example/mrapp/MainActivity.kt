@@ -3,6 +3,7 @@ package com.example.mrapp
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mrapp.Adapters.MainPageAdapter
@@ -23,8 +24,7 @@ import retrofit2.Response
 class MainActivity : AppCompatActivity() {
     private lateinit var dao: DAO
     private lateinit var recyclerView: RecyclerView
-
-    private lateinit var movieArrayList:ArrayList<Movie>
+    private lateinit var movieArrayList: ArrayList<Movie>
     private lateinit var mainPageAdapter: MainPageAdapter
     private lateinit var binding: ActivityMainBinding
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,58 +32,60 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         dao = (application as RoomApp).db.movieDao()
-
         movieArrayList = arrayListOf()
         setMainPageRV()
 
-        fetchFromApi()
-
+        if (NetworkActivity().isOnline(this)) {
+            fetchFromApi()
+        } else {
+            fetchFromRoomDB()
+        }
     }
 
-    private fun setMainPageRV(){
+    private fun fetchFromRoomDB() {
+        Toast.makeText(this, "Data fetched from ROOM Database", Toast.LENGTH_LONG).show()
+        CoroutineScope(IO).launch {
+            dao.getMoviesFromDB().collect {
+                val fetchedList = ArrayList(it)
+                addToList(fetchedList)
+            }
+        }
+    }
 
+    private fun addToList(fetchedList: java.util.ArrayList<RoomEntity>) {
+        movieArrayList.clear()
+        fetchedList.distinct().forEach {
+            movieArrayList.add(
+                Movie(
+                    it.Title,
+                    it.Year,
+                    it.Summary,
+                    it.Short_Summary,
+                    it.Genres,
+                    it.IMDBID,
+                    it.Runtime,
+                    it.YouTube_Trailer,
+                    it.Rating,
+                    it.Movie_Poster,
+                    it.Director,
+                    it.Writers,
+                    it.Cast,
+                )
+            )
+        }
+        setMainPageRV()
+    }
+
+    private fun setMainPageRV() {
         recyclerView = findViewById(R.id.rv_main_page)
         recyclerView.setHasFixedSize(true)
         recyclerView.layoutManager = LinearLayoutManager(this)
-
-
-        mainPageAdapter = MainPageAdapter(this,movieArrayList)
+        mainPageAdapter = MainPageAdapter(this, movieArrayList)
         recyclerView.adapter = mainPageAdapter
     }
 
     private fun fetchFromApi(): Call<MovieApiResp> {
-
-
-//            if (response.isSuccessful && response.body() != null) {
-//                mainPageAdapter.movies = response.body()!!.Movie_List
-//                CoroutineScope(IO).launch {
-//                    dao.nukeTable()
-//                }
-//
-//                response.body()!!.Movie_List.forEach {
-//                    dao.insertToDB(
-//                        RoomEntity(
-//                            it.Title,
-//                            it.Year,
-//                            it.Summary,
-//                            it.Short_Summary,
-//                            it.Genres,
-//                            it.IMDBID,
-//                            it.Runtime,
-//                            it.YouTube_Trailer,
-//                            it.Rating,
-//                            it.Movie_Poster,
-//                            it.Director,
-//                            it.Writers,
-//                            it.Cast
-//                        )
-//                    )
-//                }
-//                Log.d("errty", "${response.body()!!.Movie_List}")
-//            } else {
-//                Log.d("errty", "respose no successfull")
-//            }
-//        }
+        Toast.makeText(this, "Data fetched from API", Toast.LENGTH_LONG).show()
         val movieResp: Call<MovieApiResp> = ApiInterface.apiService.retrofitInstance.getMovies()
         movieResp.enqueue(object : Callback<MovieApiResp> {
             override fun onResponse(
@@ -92,7 +94,6 @@ class MainActivity : AppCompatActivity() {
             ) {
                 val movieResp: MovieApiResp? = response.body()
                 if (movieResp != null) {
-                    Log.d("TypesenseLog", movieResp.Movie_List[0].YouTube_Trailer)
                     movieResp.Movie_List.distinct().forEach {
                         movieArrayList.add(
                             Movie(
@@ -111,18 +112,15 @@ class MainActivity : AppCompatActivity() {
                                 it.Cast,
                             )
                         )
-
                     }
                     updateLocalDB(movieResp)
                     setMainPageRV()
-                    //Log.d("TypesenseLog", movieArrayList.toString())
                 } else {
-                    Log.d("TypesenseLog", "null")
+                    Log.d("apiLog", "null")
                 }
             }
-
             override fun onFailure(call: Call<MovieApiResp>, t: Throwable) {
-                Log.d("TypesenseLog", "$t")
+                Log.d("apiLog", "Call Failed")
             }
         })
         return movieResp
@@ -132,10 +130,10 @@ class MainActivity : AppCompatActivity() {
         var movielist = movieresp!!.Movie_List.distinct()
         CoroutineScope(IO).launch {
             dao.nukeTable()
-
             movielist.forEach {
                 dao.insertToDB(
-                    RoomEntity(it.Title,
+                    RoomEntity(
+                        it.Title,
                         it.Year,
                         it.Summary,
                         it.Short_Summary,
@@ -147,12 +145,10 @@ class MainActivity : AppCompatActivity() {
                         it.Movie_Poster,
                         it.Director,
                         it.Writers,
-                        it.Cast,)
+                        it.Cast,
+                    )
                 )
             }
-
-
         }
-
     }
 }
