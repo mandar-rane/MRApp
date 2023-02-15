@@ -7,21 +7,21 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 
-//const val BASE_URL = "http://task.auditflo.in/"
+const val BASE_URL = "http://task.auditflo.in/"
 
 interface ApiInterface {
-    @GET("/1.json")
-    suspend fun getMovies(): Response<MovieApiResp>
+    @GET("1.json")
+    fun getMovies(): Call<MovieApiResp>
 
 
 
-//    object apiService {
-//        val retrofitInstance: ApiInterface
-//        init {
-//            val retrofit: Retrofit = Retrofit.Builder().baseUrl(BASE_URL).addConverterFactory(
-//                GsonConverterFactory.create()
-//            ).build()
-//            retrofitInstance = retrofit.create(ApiInterface::class.java)
-//        }
-//    }
+    object apiService {
+        val retrofitInstance: ApiInterface
+        init {
+            val retrofit: Retrofit = Retrofit.Builder().baseUrl(BASE_URL).addConverterFactory(
+                GsonConverterFactory.create()
+            ).build()
+            retrofitInstance = retrofit.create(ApiInterface::class.java)
+        }
+    }
 }
