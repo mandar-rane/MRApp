@@ -57,7 +57,7 @@ class MainActivity : AppCompatActivity() {
         fetchedList.distinct().forEach {
             movieArrayList.add(
                 Movie(
-                    it.Title
+                    it.Title,
                     it.Year,
                     it.Summary,
                     it.Short_Summary,
