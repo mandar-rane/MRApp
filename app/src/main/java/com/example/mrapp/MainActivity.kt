@@ -95,27 +95,32 @@ class MainActivity : AppCompatActivity() {
             ) {
                 val movieResp: MovieApiResp? = response.body()
                 if (movieResp != null) {
+                    Log.d("TypesenseLog", movieResp.Movie_List[0].YouTube_Trailer)
                     movieResp.Movie_List.forEach {
+
                         movieArrayList.add(
                             Movie(
                                 it.Title,
+                                it.Year,
+                                it.Summary,
+                                it.Short_Summary,
+                                it.Genres,
+                                it.IMDBID,
+                                it.Runtime,
                                 "",
-                                "",
-                                "",
-                                "",
-                                "",
-                                "",
-                                "",
-                                "",
+                                it.Rating,
                                 it.Movie_Poster,
-                                "",
-                                "",
-                                ""
+                                it.Director,
+                                it.Writers,
+                                it.Cast
                             )
                         )
+
+
                     }
+                    updateLocalDB()
                     setMainPageRV()
-                    Log.d("TypesenseLog", movieArrayList.toString())
+                    //Log.d("TypesenseLog", movieArrayList.toString())
                 } else {
                     Log.d("TypesenseLog", "null")
                 }
@@ -126,5 +131,10 @@ class MainActivity : AppCompatActivity() {
             }
         })
         return movieResp
+    }
+
+    private fun updateLocalDB() {
+
+
     }
 }
