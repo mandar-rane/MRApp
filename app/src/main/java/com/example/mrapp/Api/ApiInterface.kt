@@ -6,12 +6,13 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
+import retrofit2.http.Path
 
 const val BASE_URL = "http://task.auditflo.in/"
 
 interface ApiInterface {
-    @GET("1.json")
-    fun getMovies(): Call<MovieApiResp>
+    @GET("{pth}")
+    fun getMovies(@Path(value = "pth") pth: String): Call<MovieApiResp>
 
 
 

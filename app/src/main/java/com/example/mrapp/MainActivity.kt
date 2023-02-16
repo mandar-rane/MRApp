@@ -3,6 +3,7 @@ package com.example.mrapp
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -36,57 +37,23 @@ class MainActivity : AppCompatActivity() {
         setMainPageRV()
 
         if (NetworkActivity().isOnline(this)) {
-            fetchFromApi()
+            fetchFromApi("1.json")
         } else {
             fetchFromRoomDB()
         }
-    }
 
-    private fun fetchFromRoomDB() {
-        Toast.makeText(this, "Data fetched from ROOM Database", Toast.LENGTH_LONG).show()
-        CoroutineScope(IO).launch {
-            dao.getMoviesFromDB().collect {
-                val fetchedList = ArrayList(it)
-                addToList(fetchedList)
+        binding.refreshBtn.setOnClickListener {
+            movieArrayList.clear()
+            if (NetworkActivity().isOnline(this)) {
+                fetchFromApi("2.json")
+            } else {
+                Toast.makeText(this, "You are OFFLINE", Toast.LENGTH_LONG).show()
             }
         }
     }
-
-    private fun addToList(fetchedList: java.util.ArrayList<RoomEntity>) {
-        movieArrayList.clear()
-        fetchedList.distinct().forEach {
-            movieArrayList.add(
-                Movie(
-                    it.Title,
-                    it.Year,
-                    it.Summary,
-                    it.Short_Summary,
-                    it.Genres,
-                    it.IMDBID,
-                    it.Runtime,
-                    it.YouTube_Trailer,
-                    it.Rating,
-                    it.Movie_Poster,
-                    it.Director,
-                    it.Writers,
-                    it.Cast,
-                )
-            )
-        }
-        setMainPageRV()
-    }
-
-    private fun setMainPageRV() {
-        recyclerView = findViewById(R.id.rv_main_page)
-        recyclerView.setHasFixedSize(true)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        mainPageAdapter = MainPageAdapter(this, movieArrayList)
-        recyclerView.adapter = mainPageAdapter
-    }
-
-    private fun fetchFromApi(): Call<MovieApiResp> {
+    private fun fetchFromApi(apiPath: String): Call<MovieApiResp> {
         Toast.makeText(this, "Data fetched from API", Toast.LENGTH_LONG).show()
-        val movieResp: Call<MovieApiResp> = ApiInterface.apiService.retrofitInstance.getMovies()
+        val movieResp: Call<MovieApiResp> = ApiInterface.apiService.retrofitInstance.getMovies(apiPath)
         movieResp.enqueue(object : Callback<MovieApiResp> {
             override fun onResponse(
                 call: Call<MovieApiResp>,
@@ -125,6 +92,51 @@ class MainActivity : AppCompatActivity() {
         })
         return movieResp
     }
+    private fun fetchFromRoomDB() {
+        Toast.makeText(this, "Data fetched from ROOM Database", Toast.LENGTH_LONG).show()
+        CoroutineScope(IO).launch {
+            dao.getMoviesFromDB().collect {
+                val fetchedList = ArrayList(it)
+                addToList(fetchedList)
+            }
+        }
+    }
+
+    private fun addToList(fetchedList: java.util.ArrayList<RoomEntity>) {
+        movieArrayList.clear()
+        fetchedList.distinct().forEach {
+            movieArrayList.add(
+                Movie(
+                    it.Title,
+                    it.Year,
+                    it.Summary,
+                    it.Short_Summary,
+                    it.Genres,
+                    it.IMDBID,
+                    it.Runtime,
+                    it.YouTube_Trailer,
+                    it.Rating,
+                    it.Movie_Poster,
+                    it.Director,
+                    it.Writers,
+                    it.Cast,
+                )
+            )
+        }
+        this@MainActivity.runOnUiThread(java.lang.Runnable {
+            setMainPageRV()
+        })
+    }
+
+    private fun setMainPageRV() {
+        recyclerView = findViewById(R.id.rv_main_page)
+        recyclerView.setHasFixedSize(true)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        mainPageAdapter = MainPageAdapter(this, movieArrayList)
+        recyclerView.adapter = mainPageAdapter
+    }
+
+
 
     private fun updateLocalDB(movieresp: MovieApiResp?) {
         var movielist = movieresp!!.Movie_List.distinct()
