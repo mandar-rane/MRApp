@@ -32,6 +32,8 @@ class MainPageAdapter(private var context: Context, val movies: ArrayList<Movie>
 
 
 
+
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MainPageAdapter.ViewHolder {
         val itemView = LayoutInflater.from(parent.context).inflate(R.layout.list_item_main, parent, false)
         return ViewHolder(itemView)
